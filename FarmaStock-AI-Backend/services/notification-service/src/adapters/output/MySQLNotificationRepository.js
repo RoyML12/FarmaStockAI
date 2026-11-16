@@ -1,0 +1,2 @@
+const {pool}=require('@farmastock/shared');
+module.exports={async persist(notification){const [r]=await pool.query('INSERT IGNORE INTO notifications(event_id,event_type,title,message,severity,payload) VALUES (?,?,?,?,?,?)',[notification.event_id,notification.event_type,notification.title,notification.message,notification.severity,notification.payload]);if(r.affectedRows)await pool.query('INSERT INTO notification_deliveries(notification_id) VALUES (?)',[r.insertId]);return r.affectedRows>0}};

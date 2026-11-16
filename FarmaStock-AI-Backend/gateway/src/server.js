@@ -1,0 +1,11 @@
+const express=require('express');const jwt=require('jsonwebtoken');const rateLimit=require('express-rate-limit');
+const app=express();app.disable('x-powered-by');app.use(express.json({limit:'1mb'}));
+app.get('/health',(req,res)=>res.json({status:'ok',service:'gateway',timestamp:new Date().toISOString()}));
+app.use('/api/auth/login',rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-7',legacyHeaders:false}));
+const routeMap={auth:'http://auth-service:3001',catalog:'http://catalog-service:3002',inventory:'http://inventory-service:3003',purchases:'http://purchase-service:3004',sales:'http://sales-service:3005',notifications:'http://notification-service:3006',ai:'http://ai-service:3007'};
+app.use('/api/:service',(req,res,next)=>{if(!routeMap[req.params.service])return res.status(404).json({error:'Servicio inexistente'});if(req.params.service==='auth'&&req.path==='/login'&&req.method==='POST')return next();const token=(req.get('authorization')||'').replace(/^Bearer /i,'');try{req.auth=jwt.verify(token,process.env.JWT_SECRET,{issuer:'farmastock-ai'});next()}catch(e){res.status(401).json({error:'Sesión ausente o expirada'})}});
+app.use('/api/:service',async(req,res)=>{const base=routeMap[req.params.service];const original=req.originalUrl;const relative=original.replace(new RegExp('^/api/'+req.params.service),'')||'/';
+// Nunca copiar los encabezados X-User suministrados por el cliente.
+const headers={'content-type':'application/json'};if(req.auth){headers['x-user-id']=String(req.auth.sub);headers['x-user-role']=req.auth.role;headers['x-user-email']=req.auth.email||''}
+try{const response=await fetch(base+relative,{method:req.method,headers,body:['GET','HEAD'].includes(req.method)?undefined:JSON.stringify(req.body||{}),signal:AbortSignal.timeout(req.originalUrl.split("?")[0] === "/api/ai/ask" ? 190000 : 15000)});res.status(response.status);const contentType=response.headers.get('content-type');if(contentType)res.set('content-type',contentType);res.send(Buffer.from(await response.arrayBuffer()))}catch(e){console.error('Proxy:',e.message);res.status(502).json({error:'Servicio no disponible o tiempo de espera agotado'})}});
+app.listen(Number(process.env.PORT||3000),'0.0.0.0',()=>console.log('API Gateway en puerto 3000'));

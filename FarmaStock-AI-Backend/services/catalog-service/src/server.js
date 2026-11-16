@@ -1,0 +1,12 @@
+const express=require('express');const {pool,asyncRoute,errorHandler,internal,requireRole,waitDb,httpError}=require('@farmastock/shared');
+const products=require('./adapters/output/MySQLProductRepository');const saveProduct=require('./application/use-cases/SaveProduct')(products);
+const app=express();app.use(express.json());app.get('/health',asyncRoute(async(req,res)=>{await pool.query('SELECT 1');res.json({status:'ok',service:'catalog'})}));
+app.get('/categories',asyncRoute(async(req,res)=>res.json(await products.categories())));
+app.post('/categories',requireRole('admin','pharmacist'),asyncRoute(async(req,res)=>{if(!String(req.body.name||'').trim())throw httpError(400,'Nombre obligatorio');const [r]=await pool.query('INSERT INTO categories(name) VALUES (?)',[req.body.name.trim()]);res.status(201).json({id:r.insertId,name:req.body.name.trim()})}));
+app.get('/products',asyncRoute(async(req,res)=>res.json(await products.list(String(req.query.q||'').slice(0,80)))));
+app.get('/products/:id',asyncRoute(async(req,res)=>{const p=await products.byId(req.params.id);if(!p)throw httpError(404,'Producto inexistente');res.json(p)}));
+app.get('/internal/products/:id',internal,asyncRoute(async(req,res)=>{const p=await products.byId(req.params.id);if(!p||!p.is_active)throw httpError(404,'Producto inexistente');res.json(p)}));
+app.post('/products',requireRole('admin','pharmacist'),asyncRoute(async(req,res)=>res.status(201).json(await saveProduct(req.body))));
+app.put('/products/:id',requireRole('admin','pharmacist'),asyncRoute(async(req,res)=>res.json(await saveProduct(req.body,req.params.id))));
+app.use((err,req,res,next)=>{if(err.code==='ER_DUP_ENTRY')err=httpError(409,'SKU, código de barras o categoría duplicados');errorHandler(err,req,res,next)});
+waitDb().then(()=>app.listen(3002,'0.0.0.0',()=>console.log('catalog-service :3002'))).catch(e=>{console.error(e);process.exit(1)});

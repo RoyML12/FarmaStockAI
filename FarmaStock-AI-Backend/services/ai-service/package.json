@@ -1,0 +1,15 @@
+{
+  "name": "farmastock-ai-service",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@farmastock/shared": "file:../../shared",
+    "express": "^4.21.2",
+    "@langchain/openai": "^0.5.0",
+    "@langchain/core": "^0.3.0"
+  }
+}

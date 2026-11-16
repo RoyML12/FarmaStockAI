@@ -1,0 +1,5 @@
+// Índice opcional de similitud operativa (4 dimensiones), NO embeddings semánticos.
+const endpoint=process.env.QDRANT_URL||'http://qdrant:6333';
+async function ensureCollection(){let r=await fetch(endpoint+'/collections/farmastock_risks');if(r.ok)return;await fetch(endpoint+'/collections/farmastock_risks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({vectors:{size:4,distance:'Cosine'}})});}
+async function indexRisks(risks){if(!risks.length)return;try{await ensureCollection();const points=risks.map(r=>({id:Number(r.batch_id),vector:[Math.max(0,Math.min(1,r.days_remaining/365)),Math.max(0,Math.min(1,r.quantity/1000)),Math.max(0,Math.min(1,r.avg_daily_demand/100)),Math.max(0,Math.min(1,r.estimated_leftover/1000))],payload:{product_name:r.product_name,lot_number:r.lot_number,risk_level:r.risk_level,days_remaining:r.days_remaining}}));await fetch(endpoint+'/collections/farmastock_risks/points?wait=true',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({points})})}catch(e){console.warn('Qdrant opcional:',e.message)}}
+module.exports={indexRisks};

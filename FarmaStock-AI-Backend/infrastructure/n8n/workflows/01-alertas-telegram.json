@@ -1,0 +1,60 @@
+{
+  "name": "FarmaStock AI - Alertas Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "farmastock-alerts",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "farm-webhook",
+      "name": "Recibir alerta desde servicio",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "farmastock-alerts"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "REEMPLAZA_CHAT_ID",
+        "text": "={{ \"🚨 FarmaStock AI\\n\" + $json.body.title + \"\\n\" + $json.body.message + \"\\nPrioridad: \" + $json.body.severity }}",
+        "additionalFields": {}
+      },
+      "id": "farm-telegram",
+      "name": "Enviar a Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Recibir alerta desde servicio": {
+      "main": [
+        [
+          {
+            "node": "Enviar a Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

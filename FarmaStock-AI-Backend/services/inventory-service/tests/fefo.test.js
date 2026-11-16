@@ -1,0 +1,3 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {allocateFEFO}=require('../src/domain/services/FEFO');
+test('utiliza el lote que vence primero aunque tenga id mayor',()=>{const out=allocateFEFO([{id:1,expiry_date:'2027-12-01',quantity:10,reserved:0},{id:9,expiry_date:'2027-01-01',quantity:5,reserved:0}],6);assert.deepEqual(out.allocations,[{batch_id:9,quantity:5},{batch_id:1,quantity:1}]);assert.equal(out.remaining,0)});
+test('descuenta cantidad reservada y reporta faltante',()=>{const out=allocateFEFO([{id:1,expiry_date:'2027-01-01',quantity:10,reserved:9}],3);assert.equal(out.remaining,2)});

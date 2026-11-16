@@ -1,0 +1,5 @@
+const {pool,httpError,jsonFetch,serviceUrl,publish}=require('@farmastock/shared');
+module.exports=async(id)=>{const [[order]]=await pool.query('SELECT * FROM purchase_orders WHERE id=?',[id]);if(!order)throw httpError(404,'Orden inexistente');if(order.status==='received')return {id,status:'received',replayed:true};const [items]=await pool.query('SELECT * FROM purchase_order_items WHERE order_id=?',[id]);
+for(const item of items){if(!item.lot_number||!item.expiry_date)throw httpError(400,'Cada ítem necesita lote y fecha de caducidad antes de recibir; regístralos al crear la orden');await jsonFetch(serviceUrl('inventory')+'/internal/batches/receive',{method:'POST',body:JSON.stringify({product_id:item.product_id,quantity:item.quantity,unit_cost:item.unit_cost,lot_number:item.lot_number,expiry_date:String(item.expiry_date).slice(0,10),reference_key:`purchase:${id}:${item.id}`})})}
+await pool.query("UPDATE purchase_orders SET status='received' WHERE id=?",[id]);await publish('purchase.received',{order_id:id,items:items.length,dedupe_key:`purchase.received:${id}`});return {id,status:'received'};
+};

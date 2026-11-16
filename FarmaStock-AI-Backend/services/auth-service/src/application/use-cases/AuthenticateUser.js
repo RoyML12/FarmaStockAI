@@ -1,0 +1,2 @@
+const bcrypt=require('bcryptjs');const {signToken,httpError}=require('@farmastock/shared');
+module.exports=(users)=>async({email,password})=>{const value=String(email||'').trim().toLowerCase();if(!value||!password)throw httpError(400,'Email y contraseña obligatorios');const u=await users.byEmail(value);if(!u||!await bcrypt.compare(String(password),u.password_hash))throw httpError(401,'Credenciales incorrectas');return {token:signToken(u),user:{id:u.id,full_name:u.full_name,email:u.email,role:u.role}}};

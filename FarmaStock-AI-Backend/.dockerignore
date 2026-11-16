@@ -1,0 +1,11 @@
+**/node_modules
+**/.expo
+**/.git
+**/.env
+**/dist
+**/coverage
+**/*.zip
+mobile/
+docs/
+scripts/
+README.md

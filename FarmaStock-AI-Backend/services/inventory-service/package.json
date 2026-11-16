@@ -1,0 +1,13 @@
+{
+  "name": "farmastock-inventory-service",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@farmastock/shared": "file:../../shared",
+    "express": "^4.21.2"
+  }
+}
